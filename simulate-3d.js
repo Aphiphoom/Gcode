@@ -34,7 +34,7 @@
   const MESH_LONG_SIDE = 560;
   const MESH_MIN_SIDE = 24;
   const BATCH = 32;            // จำนวน stamp ต่อ ping-pong pass
-  const RAPID_FEED = 30000;    // ความเร็ว G0 (mm/min) ที่ใช้ในการจำลองการเคลื่อนที่ rapid ของ tool
+  const RAPID_FEED = 10000;    // ความเร็ว G0 (mm/min) ที่ใช้ในการจำลองการเคลื่อนที่ rapid ของ tool
                                // ใช้คำนวณจำนวน waypoint ระหว่าง operation (ไม่ได้กัดไม้ แค่ขยับ tool)
   const TRAVEL_STEP = RAPID_FEED / 60 / 30; // ระยะห่างระหว่าง waypoint (mm) ที่ 30fps ≈ 16.7mm/waypoint
 
