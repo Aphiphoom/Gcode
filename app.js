@@ -931,6 +931,10 @@
       if (tab.isBottom && /^cut_outside_/i.test(ln)) {
         mapped.enabled = false;
       }
+      // Non-Bottom file: layer mark_square ไม่มีความหมาย (ใช้เฉพาะ Bottom เท่านั้น)
+      if (!tab.isBottom && /^mark_square/i.test(ln)) {
+        mapped.enabled = false;
+      }
       m[ln] = mapped;
     });
     return m;
