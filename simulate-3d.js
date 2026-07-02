@@ -34,6 +34,9 @@
   const MESH_LONG_SIDE = 560;
   const MESH_MIN_SIDE = 24;
   const BATCH = 32;            // จำนวน stamp ต่อ ping-pong pass
+  const RAPID_FEED = 30000;    // ความเร็ว G0 (mm/min) ที่ใช้ในการจำลองการเคลื่อนที่ rapid ของ tool
+                               // ใช้คำนวณจำนวน waypoint ระหว่าง operation (ไม่ได้กัดไม้ แค่ขยับ tool)
+  const TRAVEL_STEP = RAPID_FEED / 60 / 30; // ระยะห่างระหว่าง waypoint (mm) ที่ 30fps ≈ 16.7mm/waypoint
 
   let renderer, scene, camera, group, mesh, toolMesh;
   let containerEl, controlsEl;
@@ -806,13 +809,45 @@
     }
     const sampleStep = Math.max(boundsW / texW, boundsH / texH) * 1.2;
 
+    // เพิ่ม travel waypoints ระหว่าง op แต่ละตัว เพื่อให้ tool mesh เคลื่อนที่ด้วยความเร็ว
+    // RAPID_FEED แทนการกระโดดทันที — waypoint ไม่ได้ stamp heightmap เลย แค่ขยับ tool
+    let lastTravelPt = null; // ตำแหน่งล่าสุดที่ tool อยู่หลังจบ operation ก่อนหน้า
+
+    // helper: แทรก travel waypoints จาก (x0,y0) → (x1,y1) ที่ความสูง safeH
+    function addTravel(x0, y0, x1, y1, safeH, toolRef) {
+      const dist = Math.hypot(x1 - x0, y1 - y0);
+      if (dist < TRAVEL_STEP) {
+        // ระยะสั้นเกินไป แทรกแค่จุดเดียว
+        actions.push({ type: 'travel', x: x1, y: y1, h: safeH, tool: toolRef });
+        return;
+      }
+      const steps = Math.ceil(dist / TRAVEL_STEP);
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        actions.push({ type: 'travel', x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t, h: safeH, tool: toolRef });
+      }
+    }
+
     ops.forEach((op) => {
       const tool = op.tool;
+      const safeH = baseThickness + (parseFloat(machine.rapidClearance) || 3);
+
+      // คำนวณจุดเริ่มต้นของ op นี้เพื่อใส่ travel ก่อนเริ่มตัด
+      let opStartX, opStartY;
+      if (op.kind === 'drill') opStartX = op.point.x, opStartY = op.point.y;
+      else if (op.kind === 'pocket' && op.rings && op.rings[0] && op.rings[0][0]) opStartX = op.rings[0][0].x, opStartY = op.rings[0][0].y;
+      else if (op.path && op.path[0]) opStartX = op.path[0].x, opStartY = op.path[0].y;
+
+      // แทรก travel ถ้ามีตำแหน่งก่อนหน้า และ op นี้มีจุดเริ่มต้นชัดเจน
+      if (lastTravelPt && opStartX !== undefined) {
+        addTravel(lastTravelPt.x, lastTravelPt.y, opStartX, opStartY, safeH, tool);
+      }
 
       if (classifyAsHole(op, machine)) {
         const polygons = buildHolePolygons(op);
         const last = op.kind === 'drill' ? op.point : (op.path[op.path.length - 1] || { x: originX, y: originY });
         if (polygons.length) actions.push({ type: 'hole', polygons, x: last.x, y: last.y, h: 0, tool });
+        lastTravelPt = { x: last.x, y: last.y };
         return;
       }
 
@@ -822,6 +857,7 @@
       if (op.kind === 'drill') {
         const seq = (op.passes && op.passes.length ? op.passes : [op.targetZ]).map((z) => heightFromRealZ(z, machine));
         seq.forEach((h) => actions.push({ type: 'stamp', x: op.point.x, y: op.point.y, r: radius, h, profileType: profile.profileType, profileParam: profile.profileParam, tool }));
+        lastTravelPt = { x: op.point.x, y: op.point.y };
         return;
       }
 
@@ -844,6 +880,8 @@
             actions.push({ type: 'stamp', x: s.x, y: s.y, r: radius, h: hh, profileType: profile.profileType, profileParam: profile.profileParam, tool });
           });
         });
+        // ตำแหน่งสุดท้ายหลังจบ ring นี้
+        if (ring.length > 0) lastTravelPt = { x: ring[ring.length - 1].x, y: ring[ring.length - 1].y };
       });
     });
   }
@@ -906,10 +944,16 @@
         slabDirty = true;
         lastAction = list[i];
         i++;
+      } else if (list[i].type === 'travel') {
+        // travel: ขยับ tool mesh ที่ safeZ ไม่ stamp heightmap เลย
+        lastAction = list[i];
+        i++;
       } else {
         let j = i;
         const buf = [];
-        while (j < list.length && list[j].type !== 'hole' && buf.length < BATCH) { buf.push(list[j]); j++; }
+        while (j < list.length && list[j].type !== 'hole' && list[j].type !== 'travel' && buf.length < BATCH) {
+          buf.push(list[j]); j++;
+        }
         if (buf.length) runStampBatch(buf);
         lastAction = buf[buf.length - 1] || lastAction;
         i = j;
