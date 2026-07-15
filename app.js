@@ -634,7 +634,7 @@
             return e.dxf.layers.forEach(o => {
                 if (o === m || -1 !== f.indexOf(o)) return;
                 const n = v(o),
-                    a = k(n.depth, i.machine),
+                    a = k(n.depth, t),
                     s = Object.assign({}, n, {
                         depth: isFinite(a) ? a : 0
                     });
@@ -737,7 +737,7 @@
                     for (const e of r) {
                         le(e);
                         const t = n.generate(e.lastJob, {
-                            machine: i.machine,
+                            machine: Object.assign({}, i.machine, { woodThickness: e.woodThickness || i.machine.woodThickness }),
                             header: i.header,
                             footer: i.footer,
                             toolChange: i.toolChange
