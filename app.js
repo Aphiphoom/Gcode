@@ -630,7 +630,7 @@
                 warnings: r.warnings
             }, e.lastDoors = r.doors
         } else e.lastJob = o.generate(e.dxf, function(e) {
-            const t = {};
+            const mappings = {};
             return e.dxf.layers.forEach(o => {
                 if (o === m || -1 !== f.indexOf(o)) return;
                 const n = v(o),
@@ -638,8 +638,8 @@
                     s = Object.assign({}, n, {
                         depth: isFinite(a) ? a : 0
                     });
-                e.isBottom && /^cut_outside_/i.test(o) && (s.enabled = !1), !e.isBottom && /^mark_square/i.test(o) && (s.enabled = !1), t[o] = s
-            }), t
+                e.isBottom && /^cut_outside_/i.test(o) && (s.enabled = !1), !e.isBottom && /^mark_square/i.test(o) && (s.enabled = !1), mappings[o] = s
+            }), mappings
         }(e), i.tools, t, n), e.lastDoors = null;
         return e.lastJob
     }
