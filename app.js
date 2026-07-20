@@ -148,38 +148,69 @@
             }), e.appendChild(o)
         })
     }
+    function isSketchUpHtmlDialog() {
+        return "object" == typeof window.sketchup || /SketchUp/i.test(navigator.userAgent || "")
+    }
+
+    function readFileAsArrayBuffer(e) {
+        if (e && "function" == typeof e.arrayBuffer) return e.arrayBuffer().catch(() => readFileWithFileReader(e));
+        return readFileWithFileReader(e)
+    }
+
+    function readFileWithFileReader(e) {
+        return new Promise((t, o) => {
+            const n = new FileReader;
+            n.onload = () => t(n.result), n.onerror = () => o(n.error || new Error("ไม่สามารถอ่านไฟล์ได้")), n.onabort = () => o(new Error("ยกเลิกการอ่านไฟล์")), n.readAsArrayBuffer(e)
+        })
+    }
+
+    function classifyInputFiles(e) {
+        const t = [],
+            o = [];
+        for (const n of e) /\.zip$/i.test(n.name) ? t.push({
+            _zip: !0,
+            file: n
+        }) : /\.dxf$/i.test(n.name) ? t.push(n) : o.push(n.name || "ไฟล์ไม่มีชื่อ");
+        return {
+            accepted: t,
+            rejected: o
+        }
+    }
+
     async function L(e) {
         const t = [];
         for (const o of e)
             if (o._zip) try {
-                const e = await o.file.arrayBuffer(),
-                    n = await JSZip.loadAsync(e);
+                if (!window.JSZip) throw new Error("JSZip โหลดไม่สำเร็จ กรุณาตรวจการเชื่อมต่ออินเทอร์เน็ต");
+                const e = await readFileAsArrayBuffer(o.file),
+                    n = await window.JSZip.loadAsync(e);
+                let a = 0;
                 for (const [e, o] of Object.entries(n.files))
                     if (/\.dxf$/i.test(e) && !o.dir) {
                         const n = await o.async("string");
                         t.push(new File([n], e.split("/").pop(), {
                             type: "text/plain"
-                        }))
+                        })), a++
                     }
+                a || he(["ZIP " + o.file.name + " ไม่มีไฟล์ DXF"])
             } catch (e) {
-                he(["แตก ZIP ไม่สำเร็จ: " + e.message])
+                he(["เปิด ZIP " + o.file.name + " ไม่สำเร็จ: " + e.message])
             } else t.push(o);
         if (t.length) {
             r.length && [...r].forEach(e => w(e.id));
             for (const e of t) await x(e)
         }
     }
+    const dxfInput = l("dxfInput");
+    isSketchUpHtmlDialog() && dxfInput.removeAttribute("accept");
     l("btnOpenDxfLabel").addEventListener("click", e => {
         pe() && e.preventDefault()
-    }), l("dxfInput").addEventListener("change", async e => {
+    }), dxfInput.addEventListener("change", async e => {
         if (pe()) return void(e.target.value = "");
         const t = Array.from(e.target.files || []);
         if (!t.length) return void(e.target.value = "");
-        const o = t.map(e => /\.zip$/i.test(e.name) ? {
-            _zip: !0,
-            file: e
-        } : e);
-        await L(o), e.target.value = ""
+        const o = classifyInputFiles(t);
+        o.rejected.length && he(["ไม่รองรับไฟล์: " + o.rejected.join(", ")]), await L(o.accepted), e.target.value = ""
     });
     const $ = l("preview"),
         D = $.getContext("2d"),
