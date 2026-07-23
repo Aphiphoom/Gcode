@@ -16,6 +16,17 @@
         f = (t.EXCLUDED_LAYERS || []).filter(e => "_ABF_SHEET_BORDER" !== e),
         m = "_ABF_SHEET_BORDER";
     let h = null;
+    const layerColorRegistry = new Map;
+    let nextLayerColorIndex = 0;
+
+    function resetLayerColorRegistry() {
+        layerColorRegistry.clear(), nextLayerColorIndex = 0
+    }
+
+    function colorForLayerName(e) {
+        const t = String(e || "");
+        return layerColorRegistry.has(t) || (layerColorRegistry.set(t, p[nextLayerColorIndex % p.length]), nextLayerColorIndex++), layerColorRegistry.get(t)
+    }
 
     function b() {
         clearTimeout(h), g("กำลังจะบันทึก..."), h = setTimeout(y, 900)
@@ -109,7 +120,7 @@
             b = {};
         s.layers.forEach((e, o) => {
             if (e === m || -1 !== f.indexOf(e)) return;
-            h[e] = p[o % p.length], b[e] = !0;
+            h[e] = colorForLayerName(e), b[e] = !0;
             const n = v(e);
             e === t.LOCKED_LAST_LAYER && (n.depth = "pt+cd")
         });
@@ -177,28 +188,37 @@
         }
     }
 
-    async function L(e) {
-        const t = [];
-        for (const o of e)
-            if (o._zip) try {
-                if (!window.JSZip) throw new Error("JSZip โหลดไม่สำเร็จ กรุณาตรวจการเชื่อมต่ออินเทอร์เน็ต");
-                const e = await readFileAsArrayBuffer(o.file),
-                    n = await window.JSZip.loadAsync(e);
-                let a = 0;
-                for (const [e, o] of Object.entries(n.files))
-                    if (/\.dxf$/i.test(e) && !o.dir) {
-                        const n = await o.async("string");
-                        t.push(new File([n], e.split("/").pop(), {
-                            type: "text/plain"
-                        })), a++
-                    }
-                a || he(["ZIP " + o.file.name + " ไม่มีไฟล์ DXF"])
+    async function extractDxfFilesFromZip(e) {
+        if (!window.JSZip) throw new Error("JSZip โหลดไม่สำเร็จ กรุณาตรวจการเชื่อมต่ออินเทอร์เน็ต");
+        const t = await readFileAsArrayBuffer(e),
+            o = await window.JSZip.loadAsync(t),
+            n = [];
+        for (const [e, t] of Object.entries(o.files))
+            if (/\.dxf$/i.test(e) && !t.dir) {
+                const o = await t.async("string");
+                n.push(new File([o], e.split("/").pop(), {
+                    type: "text/plain"
+                }))
+            }
+        if (!n.length) throw new Error("ZIP ไม่มีไฟล์ DXF");
+        return n
+    }
+
+    async function importFiles(e, t = {}) {
+        const o = [];
+        for (const n of e)
+            if (n._zip) try {
+                o.push(...await extractDxfFilesFromZip(n.file))
             } catch (e) {
-                he(["เปิด ZIP " + o.file.name + " ไม่สำเร็จ: " + e.message])
-            } else t.push(o);
-        if (t.length) {
+                if (he(["เปิด ZIP " + n.file.name + " ไม่สำเร็จ: " + e.message]), t.throwOnZipError) throw e
+            } else o.push(n);
+        if (o.length) {
+            resetLayerColorRegistry();
             r.length && [...r].forEach(e => w(e.id));
-            for (const e of t) await x(e)
+            for (const e of o) await x(e)
+        }
+        return {
+            importedCount: o.length
         }
     }
     const dxfInput = l("dxfInput");
@@ -210,8 +230,138 @@
         const t = Array.from(e.target.files || []);
         if (!t.length) return void(e.target.value = "");
         const o = classifyInputFiles(t);
-        o.rejected.length && he(["ไม่รองรับไฟล์: " + o.rejected.join(", ")]), await L(o.accepted), e.target.value = ""
+        o.rejected.length && he(["ไม่รองรับไฟล์: " + o.rejected.join(", ")]), await importFiles(o.accepted), e.target.value = ""
     });
+
+    const cabinetImportResults = new Map;
+    let cabinetBridgeReady = !1,
+        pendingCabinetImport = null,
+        cabinetImportRunning = !1;
+
+    function base64ToZipFile(e, t, o = "application/zip") {
+        if ("string" != typeof e || !e.length) throw new Error("ZIP Base64 is empty");
+        const n = atob(e.replace(/\s/g, "")),
+            a = new Uint8Array(n.length);
+        for (let e = 0; e < n.length; e += 1) a[e] = n.charCodeAt(e);
+        return new File([a], t || "AP-Cabinet-Nesting.zip", {
+            type: o
+        })
+    }
+
+    function postToCabinetPro(e) {
+        window.parent !== window && window.parent.postMessage(e, "*")
+    }
+
+    function rememberCabinetResult(e, t) {
+        cabinetImportResults.set(e, t);
+        for (; cabinetImportResults.size > 30;) cabinetImportResults.delete(cabinetImportResults.keys().next().value)
+    }
+
+    function cabinetResultMessage(e, t, o) {
+        const n = {
+            type: "AP_GCODE_IMPORT_RESULT",
+            protocol: 1,
+            requestId: e.requestId,
+            success: t,
+            filename: e.filename
+        };
+        return t || (n.error = o instanceof Error ? o.message : String(o)), n
+    }
+
+    function rejectCabinetImport(e, t) {
+        const o = cabinetResultMessage(e, !1, t);
+        "string" == typeof e.requestId && e.requestId && rememberCabinetResult(e.requestId, o), postToCabinetPro(o)
+    }
+
+    function queueCabinetImport(e) {
+        pendingCabinetImport && pendingCabinetImport.requestId !== e.requestId && rejectCabinetImport(pendingCabinetImport, new Error("มีคำขอนำเข้าใหม่กว่าเข้ามาแทนที่")), pendingCabinetImport = e
+    }
+
+    async function processCabinetImport(e) {
+        if (cabinetImportRunning) return void queueCabinetImport(e);
+        cabinetImportRunning = !0, g("กำลังรับไฟล์จาก AP Cabinet Pro...");
+        let t;
+        try {
+            const o = base64ToZipFile(e.base64, e.filename, e.mimeType || "application/zip");
+            console.log("AP Cabinet ZIP converted to File", {
+                name: o.name,
+                size: o.size,
+                type: o.type
+            });
+            g("กำลังเปิด " + e.filename + "...");
+            const n = await importFiles([{
+                _zip: !0,
+                file: o
+            }], {
+                throwOnZipError: !0
+            });
+            if (!n.importedCount) throw new Error("ไม่พบไฟล์ DXF ที่นำเข้าได้");
+            t = cabinetResultMessage(e, !0), g("เปิด " + e.filename + " สำเร็จ")
+        } catch (o) {
+            console.error("AP Cabinet ZIP import failed", o);
+            t = cabinetResultMessage(e, !1, o), he(["รับไฟล์จาก AP Cabinet Pro ไม่สำเร็จ: " + t.error])
+        } finally {
+            rememberCabinetResult(e.requestId, t), postToCabinetPro(t), cabinetImportRunning = !1;
+            const o = pendingCabinetImport;
+            pendingCabinetImport = null, o && processCabinetImport(o)
+        }
+    }
+
+    function validateCabinetImportMessage(e) {
+        if ("string" != typeof e.requestId || !e.requestId) throw new Error("requestId ไม่ถูกต้อง");
+        if ("base64" !== e.encoding) throw new Error("รองรับเฉพาะ encoding แบบ base64");
+        if ("string" != typeof e.base64 || !e.base64.trim()) throw new Error("ไม่พบข้อมูล ZIP แบบ Base64");
+        if ("string" != typeof e.filename || !/\.zip$/i.test(e.filename)) throw new Error("ชื่อไฟล์ต้องลงท้ายด้วย .zip")
+    }
+
+    let cabinetMessageListenerInstalled = !1;
+
+    function handleCabinetMessage(e) {
+        if (e.source !== window.parent) return;
+        const t = e.data;
+        if (!t || 1 !== t.protocol) return;
+        if ("AP_CABINET_PING" === t.type) return void notifyCabinetProReady();
+        if ("AP_CABINET_IMPORT_ZIP" !== t.type) return;
+        console.log("AP Cabinet ZIP received", {
+            origin: e.origin,
+            requestId: t.requestId,
+            filename: t.filename,
+            encoding: t.encoding,
+            base64Length: "string" == typeof t.base64 ? t.base64.length : 0
+        }), postToCabinetPro({
+            type: "AP_GCODE_IMPORT_RECEIVED",
+            protocol: 1,
+            requestId: t.requestId
+        });
+        try {
+            validateCabinetImportMessage(t)
+        } catch (e) {
+            return void rejectCabinetImport(t, e)
+        }
+        if (cabinetImportResults.has(t.requestId)) {
+            const e = cabinetImportResults.get(t.requestId);
+            return void(e && postToCabinetPro(e))
+        }
+        cabinetImportResults.set(t.requestId, null), cabinetBridgeReady ? processCabinetImport(t) : queueCabinetImport(t)
+    }
+
+    function installCabinetMessageListener() {
+        cabinetMessageListenerInstalled || (window.addEventListener("message", handleCabinetMessage), cabinetMessageListenerInstalled = !0)
+    }
+
+    function notifyCabinetProReady() {
+        postToCabinetPro({
+            type: "AP_GCODE_READY",
+            protocol: 1,
+            authenticated: !0
+        })
+    }
+
+    function markCabinetBridgeReady() {
+        installCabinetMessageListener(), cabinetBridgeReady = !0, notifyCabinetProReady();
+        const e = pendingCabinetImport;
+        pendingCabinetImport = null, e && processCabinetImport(e)
+    }
     const $ = l("preview"),
         D = $.getContext("2d"),
         M = l("preview3d");
@@ -991,8 +1141,8 @@
                             })
                         }
                     }
-                    await L(a)
+                    await importFiles(a)
                 })
-            }(), window.addEventListener("resize", O)
+            }(), window.addEventListener("resize", O), markCabinetBridgeReady()
     }()
 }();
