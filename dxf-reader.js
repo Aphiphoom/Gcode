@@ -44,16 +44,16 @@
             points: [e],
             arc: null
         };
-        const l = c / (2 * Math.sin(o / 2)),
+        // DXF bulge = tan(included_angle / 4). Keep radius positive and
+        // use the signed included angle for the sweep direction. A signed
+        // radius mirrors clockwise/major arcs and creates stray crossing lines.
+        const l = c * (1 + n * n) / (4 * Math.abs(n)),
             r = (t.x + e.x) / 2,
             i = (t.y + e.y) / 2,
-            h = Math.sqrt(Math.max(0, l * l - c / 2 * (c / 2))),
-            p = n > 0 ? 1 : -1,
-            u = s / c,
-            y = r + p * h * (-a / c) * (Math.abs(o) > Math.PI ? -1 : 1),
-            f = i + p * h * u * (Math.abs(o) > Math.PI ? -1 : 1),
+            h = c * (1 - n * n) / (4 * n),
+            y = r + (-a / c) * h,
+            f = i + (s / c) * h,
             x = Math.atan2(t.y - f, t.x - y);
-        Math.atan2(e.y - f, e.x - y);
         const d = Math.max(2, Math.ceil(Math.abs(o) / (Math.PI / 18))),
             M = [];
         for (let t = 1; t <= d; t++) {
