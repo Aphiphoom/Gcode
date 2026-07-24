@@ -44,9 +44,11 @@
             points: [e],
             arc: null
         };
-        // DXF bulge = tan(included_angle / 4). Keep radius positive and
-        // use the signed included angle for the sweep direction. A signed
-        // radius mirrors clockwise/major arcs and creates stray crossing lines.
+        // DXF bulge = tan(included_angle / 4).  Keep the radius positive and
+        // let the signed included angle control sweep direction.  The former
+        // implementation used a signed radius, which mirrored clockwise and
+        // major arcs and produced long stray lines between otherwise adjacent
+        // vertices.
         const l = c * (1 + n * n) / (4 * Math.abs(n)),
             r = (t.x + e.x) / 2,
             i = (t.y + e.y) / 2,
@@ -276,13 +278,14 @@
                                 if (Math.hypot(_l.x - _f.x, _l.y - _f.y) < 1e-6) deduped.pop();
                             }
                             if (deduped.length >= 2) {
-                                const n = o.some(t => "arc" === t.type);
+                                const cleanSegments = o.filter(t => Math.hypot(t.p1.x - t.p0.x, t.p1.y - t.p0.y) > 1e-6),
+                                    n = cleanSegments.some(t => "arc" === t.type);
                                 c.push({
                                     type: "LWPOLYLINE",
                                     layer: f,
                                     closed: t,
                                     points: deduped,
-                                    segments: n ? o : null
+                                    segments: n ? cleanSegments : null
                                 }), l[f] = !0
                             }
                         }
