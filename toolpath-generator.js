@@ -30,6 +30,94 @@
         }
     }
 
+    function q(t, e, n) {
+        const o = t.p1.x - t.p0.x,
+            r = t.p1.y - t.p0.y,
+            s = t.p0.x - e.cx,
+            a = t.p0.y - e.cy,
+            c = o * o + r * r;
+        if (c < 1e-12) return [];
+        const l = 2 * (s * o + a * r),
+            i = s * s + a * a - e.r * e.r,
+            h = l * l - 4 * c * i;
+        if (h < -1e-8) return [];
+        const p = Math.sqrt(Math.max(0, h)),
+            u = [(-l - p) / (2 * c), (-l + p) / (2 * c)];
+        return u.map(e => ({
+            x: t.p0.x + e * o,
+            y: t.p0.y + e * r
+        })).filter((t, e, n) => 0 === e || Math.hypot(t.x - n[0].x, t.y - n[0].y) > 1e-7)
+    }
+
+    function v(t, e) {
+        const n = e.cx - t.cx,
+            o = e.cy - t.cy,
+            r = Math.hypot(n, o);
+        if (r < 1e-9 || r > t.r + e.r + 1e-8 || r < Math.abs(t.r - e.r) - 1e-8) return [];
+        const s = (t.r * t.r - e.r * e.r + r * r) / (2 * r),
+            a = Math.sqrt(Math.max(0, t.r * t.r - s * s)),
+            c = t.cx + s * n / r,
+            l = t.cy + s * o / r,
+            i = -o * a / r,
+            h = n * a / r;
+        return [{
+            x: c + i,
+            y: l + h
+        }, {
+            x: c - i,
+            y: l - h
+        }].filter((t, e, n) => 0 === e || Math.hypot(t.x - n[0].x, t.y - n[0].y) > 1e-7)
+    }
+
+    function w(t, e, n) {
+        if (!t.length) return null;
+        let o = t[0],
+            r = Math.hypot(o.x - e.x, o.y - e.y) + Math.hypot(o.x - n.x, o.y - n.y);
+        for (let s = 1; s < t.length; s++) {
+            const a = Math.hypot(t[s].x - e.x, t[s].y - e.y) + Math.hypot(t[s].x - n.x, t[s].y - n.y);
+            a < r && (o = t[s], r = a)
+        }
+        return o
+    }
+
+    function O(t) {
+        const e = [],
+            n = 2 * Math.PI,
+            o = .1,
+            r = 10 * Math.PI / 180;
+        t.forEach(t => {
+            if ("arc" !== t.type) return void e.push(t);
+            const s = Math.atan2(t.p0.y - t.cy, t.p0.x - t.cx),
+                a = Math.atan2(t.p1.y - t.cy, t.p1.x - t.cx);
+            let c = a - s;
+            t.ccw && c <= 0 && (c += n), !t.ccw && c >= 0 && (c -= n);
+            Math.hypot(t.p1.x - t.p0.x, t.p1.y - t.p0.y) < 1e-7 && (c = t.ccw ? n : -n);
+            const l = Math.abs(c),
+                i = t.r > o ? 2 * Math.acos(Math.max(-1, Math.min(1, 1 - o / t.r))) : r,
+                h = Math.max(2, Math.min(720, Math.ceil(l / Math.min(r, i || r))));
+            let f = {
+                x: t.p0.x,
+                y: t.p0.y
+            };
+            for (let n = 1; n <= h; n++) {
+                const o = s + c * n / h,
+                    r = n === h ? {
+                        x: t.p1.x,
+                        y: t.p1.y
+                    } : {
+                        x: t.cx + t.r * Math.cos(o),
+                        y: t.cy + t.r * Math.sin(o)
+                    };
+                e.push({
+                    type: "line",
+                    p0: f,
+                    p1: r
+                }), f = r
+            }
+        });
+        return e.filter(t => Math.hypot(t.p1.x - t.p0.x, t.p1.y - t.p0.y) > 1e-6)
+    }
+
     function r(t, e) {
         const o = void 0 !== e ? e : 1e-4,
             r = n(t),
@@ -47,6 +135,10 @@
             x: a[0].x,
             y: a[0].y
         }), a)
+    }
+
+    function simplifyClosedPath(t) {
+        return r(t)
     }
 
     function s(t, r, s) {
@@ -78,11 +170,21 @@
         for (let t = 0; t < p; t++) {
             const e = i[(t - 1 + p) % p],
                 n = i[t],
-                r = o(e.ax, e.ay, e.bx, e.by, n.ax, n.ay, n.bx, n.by);
-            h.push(r || {
-                x: n.ax,
-                y: n.ay
-            })
+                s = o(e.ax, e.ay, e.bx, e.by, n.ax, n.ay, n.bx, n.by),
+                c = s ? Math.hypot(s.x - a[t].x, s.y - a[t].y) : 1 / 0,
+                l = 2.5 * r;
+            if (s && c <= l) h.push(s);
+            else {
+                const t = {
+                        x: e.bx,
+                        y: e.by
+                    },
+                    o = {
+                        x: n.ax,
+                        y: n.ay
+                    };
+                h.push(t), Math.hypot(t.x - o.x, t.y - o.y) > 1e-7 && h.push(o)
+            }
         }
         return h.push({
             x: h[0].x,
@@ -146,6 +248,26 @@
             if ("line" === e.type && "line" === n.type) {
                 const t = o(e.p0.x, e.p0.y, e.p1.x, e.p1.y, n.p0.x, n.p0.y, n.p1.x, n.p1.y);
                 h.push(t || n.p0)
+            } else if ("line" === e.type && "arc" === n.type) {
+                h.push(w(q(e, n), e.p1, {
+                    x: n.cx + n.r * Math.cos(Math.atan2(n.origP0.y - n.cy, n.origP0.x - n.cx)),
+                    y: n.cy + n.r * Math.sin(Math.atan2(n.origP0.y - n.cy, n.origP0.x - n.cx))
+                }) || e.p1)
+            } else if ("arc" === e.type && "line" === n.type) {
+                h.push(w(q(n, e), n.p0, {
+                    x: e.cx + e.r * Math.cos(Math.atan2(e.origP1.y - e.cy, e.origP1.x - e.cx)),
+                    y: e.cy + e.r * Math.sin(Math.atan2(e.origP1.y - e.cy, e.origP1.x - e.cx))
+                }) || n.p0)
+            } else if ("arc" === e.type && "arc" === n.type) {
+                const t = {
+                        x: e.cx + e.r * Math.cos(Math.atan2(e.origP1.y - e.cy, e.origP1.x - e.cx)),
+                        y: e.cy + e.r * Math.sin(Math.atan2(e.origP1.y - e.cy, e.origP1.x - e.cx))
+                    },
+                    o = {
+                        x: n.cx + n.r * Math.cos(Math.atan2(n.origP0.y - n.cy, n.origP0.x - n.cx)),
+                        y: n.cy + n.r * Math.sin(Math.atan2(n.origP0.y - n.cy, n.origP0.x - n.cx))
+                    };
+                h.push(w(v(e, n), t, o) || o)
             } else if ("arc" === n.type) {
                 const t = Math.atan2(n.origP0.y - n.cy, n.origP0.x - n.cx);
                 h.push({
@@ -237,7 +359,9 @@
         const o = t.length,
             r = t.map(t => n(t)),
             s = r.map(i),
-            a = r.map(t => Math.abs(e(t))),
+            // ใช้ bounding box area แทน signed area เพื่อให้ concave polygon (ตัว U, L, C)
+            // มี "ขนาด" ที่สะท้อนพื้นที่จริงที่ครอบครอง ไม่ใช่ signed polygon area ที่เล็กกว่าความเป็นจริง
+            a = r.map(pts => { const xs = pts.map(p => p.x), ys = pts.map(p => p.y); return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys)); }),
             c = new Array(o).fill(0);
         for (let t = 0; t < o; t++)
             for (let e = 0; e < o; e++) t !== e && a[e] > a[t] && h(s[t], r[e]) && c[t]++;
@@ -398,7 +522,23 @@
                 i.push(`วงกลมใน layer "${c}" เล็กเกินไปสำหรับมีดนี้ (offset เข้าในแล้วรัศมีติดลบ) — ใช้เส้นจุดแทน`)
             }
             if (p && p.length) {
-                const t = a(p, e, n);
+                const u = O(p);
+                if (u.length && u.every(t => "line" === t.type)) {
+                    const t = u.map(t => ({
+                        x: t.p0.x,
+                        y: t.p0.y
+                    }));
+                    t.push({
+                        x: t[0].x,
+                        y: t[0].y
+                    });
+                    return {
+                        path: l(s(simplifyClosedPath(t), e, n), o),
+                        circleMeta: null,
+                        arcRanges: []
+                    }
+                }
+                const t = a(u, e, n);
                 if (t.arcRanges.every(t => t.r > .05)) {
                     let e = t.path,
                         n = t.arcRanges;
@@ -475,7 +615,7 @@
             }), o.length < 2) return t.slice().sort((t, e) => c(t.points) - c(e.points));
         const r = o.length,
             s = o.map(e => n(t[e].points)),
-            a = s.map(t => Math.abs(e(t))),
+            a = s.map(pts => { const xs = pts.map(p => p.x), ys = pts.map(p => p.y); return (Math.max(...xs)-Math.min(...xs)) * (Math.max(...ys)-Math.min(...ys)); }),
             l = s.map(i),
             p = new Array(r).fill(-1);
         for (let t = 0; t < r; t++) {
