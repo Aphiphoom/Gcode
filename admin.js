@@ -4,14 +4,14 @@
   let e, n = [],
     a = null;
   async function s() {
-    t("userTableBody").innerHTML = '<tr><td colspan="6" class="empty-hint">กำลังโหลด...</td></tr>';
+    t("userTableBody").innerHTML = '<tr><td colspan="2" class="empty-hint">กำลังโหลด...</td></tr>';
     const {
       data: s,
       error: i
     } = await e.from("profiles").select("*").order("created_at", {
       ascending: !1
     });
-    i ? t("userTableBody").innerHTML = `<tr><td colspan="6" class="empty-hint">โหลดไม่สำเร็จ: ${i.message}</td></tr>` : (n = s.map(t => ({
+    i ? t("userTableBody").innerHTML = `<tr><td colspan="2" class="empty-hint">โหลดไม่สำเร็จ: ${i.message}</td></tr>` : (n = s.map(t => ({
       id: t.id,
       email: t.email,
       role: t.role,
@@ -20,12 +20,13 @@
       createdAt: t.created_at
     })), function() {
       const s = t("userTableBody");
-      if (!n.length) return void(s.innerHTML = '<tr><td colspan="6" class="empty-hint">ยังไม่มีสมาชิก</td></tr>');
+      if (!n.length) return void(s.innerHTML = '<tr><td colspan="2" class="empty-hint">ยังไม่มีสมาชิก</td></tr>');
       s.innerHTML = "", n.forEach(n => {
         const i = document.createElement("tr"),
           l = n.expiresAt && new Date(n.expiresAt).getTime() < Date.now();
         var r;
-        i.innerHTML = `\n        <td>${n.email}</td>\n        <td><span class="status-pill status-${n.status}">${r=n.status,{pending:"รออนุมัติ",active:"ใช้งานได้",suspended:"ระงับสิทธิ์"}[r]||r}</span></td>\n        <td>${n.expiresAt?n.expiresAt.slice(0,10)+(l?" (หมดอายุ)":""):"—"}</td>\n        <td>${n.role}</td>\n        <td>${n.createdAt?n.createdAt.slice(0,10):"—"}</td>\n        <td><button class="mini" data-id="${n.id}">จัดการ</button></td>`, i.querySelector("button").addEventListener("click", () => function(n) {
+        i.dataset.id = n.id, i.classList.toggle("selected-member", n.id === a), i.title = n.email;
+        i.innerHTML = `\n        <td>${n.email}</td>\n        <td><span class="status-pill status-${l?"suspended":n.status}">${l?"หมดอายุ":(r=n.status,{pending:"รออนุมัติ",active:"ใช้งานได้",suspended:"ระงับสิทธิ์"}[r]||r)}</span></td>`, i.addEventListener("click", () => function(n) {
           a = n.id, t("detailPanel").style.display = "", t("detailEmail").textContent = n.email, t("detailStatus").value = n.status, t("detailExpires").value = n.expiresAt ? n.expiresAt.slice(0, 10) : "", t("detailRole").value = n.role, t("saveUserMsg").textContent = "", async function(n) {
             t("logTableBody").innerHTML = '<tr><td colspan="5" class="empty-hint">กำลังโหลด...</td></tr>';
             const {
@@ -43,9 +44,7 @@
                 t.flagged && e.classList.add("flagged-row"), e.innerHTML = `\n        <td>${t.flagged?"⚠":""}</td>\n        <td>${new Date(t.created_at).toLocaleString("th-TH")}</td>\n        <td>${t.ip||"—"}</td>\n        <td>${t.city||"ไม่ทราบ"}, ${t.country||"ไม่ทราบ"}</td>\n        <td class="ua-cell" title="${(t.user_agent||"").replace(/"/g,"")}">${(t.user_agent||"").slice(0,28)}...</td>`, n.appendChild(e)
               })
             }(a)
-          }(n.id), t("detailPanel").scrollIntoView({
-            behavior: "smooth"
-          })
+          }(n.id), document.querySelectorAll("#userTableBody tr").forEach(t => t.classList.toggle("selected-member", t.dataset.id === n.id))
         }(n)), s.appendChild(i)
       })
     }())
@@ -69,17 +68,4 @@
     const a = await window.AuthClient.getMyProfile();
     a && "admin" === a.role ? (t("accessGate").style.display = "none", t("appRoot").style.display = "", t("userEmail").textContent = n.email, t("btnLogout").addEventListener("click", () => window.AuthClient.logout()), t("btnRefresh").addEventListener("click", s), t("btnSaveUser").addEventListener("click", i), await s()) : t("accessMsg").textContent = "หน้านี้สำหรับแอดมินเท่านั้น — บัญชีของคุณไม่มีสิทธิ์เข้าถึง"
   }()
-}();
-!async function(){
-  const profile=await window.AuthClient.getMyProfile();
-  if(!profile||profile.role!=="admin")return;
-  const actions=document.querySelector(".topbar-actions");
-  if(!actions||document.getElementById("btnManualEditor"))return;
-  const link=document.createElement("a");
-  link.id="btnManualEditor";
-  link.href="manual-editor.html";
-  link.className="mini";
-  link.textContent="แก้ไขคู่มือ";
-  link.style.textDecoration="none";
-  actions.insertBefore(link,document.getElementById("btnRefresh"));
 }();
