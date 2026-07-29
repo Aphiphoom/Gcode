@@ -7,6 +7,21 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
+  <style>
+    body.page-admin .admin-main{max-width:1440px;display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);align-items:start;gap:18px}
+    body.page-admin .member-list-panel{position:sticky;top:18px;max-height:calc(100vh - 94px);display:flex;flex-direction:column;min-width:0}
+    body.page-admin .member-list-panel .table-scroll{overflow:auto;min-height:180px}
+    body.page-admin #userTable{min-width:0;margin-top:8px}
+    body.page-admin #userTable th,body.page-admin #userTable td{padding:10px 8px}
+    body.page-admin #userTable th:last-child,body.page-admin #userTable td:last-child{text-align:right;width:108px}
+    body.page-admin #userTableBody tr{cursor:pointer;transition:background .12s,border-color .12s}
+    body.page-admin #userTableBody tr:hover{background:var(--steel-750)}
+    body.page-admin #userTableBody tr.selected-member{background:rgba(245,166,35,.13);box-shadow:inset 3px 0 0 var(--amber)}
+    body.page-admin #userTableBody td:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+    body.page-admin .admin-detail{min-width:0;min-height:420px}
+    body.page-admin .detail-placeholder{color:var(--ink-faint);display:flex;align-items:center;justify-content:center;min-height:320px;text-align:center;line-height:1.7}
+    @media(max-width:860px){body.page-admin .admin-main{grid-template-columns:1fr}body.page-admin .member-list-panel{position:static;max-height:none}}
+  </style>
 </head>
 <body class="page-admin">
   <div id="accessGate" class="access-gate">
@@ -34,12 +49,12 @@
     </header>
 
     <main class="admin-main">
-      <section class="admin-panel">
+      <section class="admin-panel member-list-panel">
         <p class="eyebrow">รายชื่อสมาชิกทั้งหมด</p>
         <div class="table-scroll">
           <table class="admin-table" id="userTable">
-            <thead><tr><th>อีเมล</th><th>สถานะ</th><th>ใช้ได้ถึง</th><th>Role</th><th>สมัครเมื่อ</th><th>เครื่องมือ</th></tr></thead>
-            <tbody id="userTableBody"><tr><td colspan="6" class="empty-hint">กำลังโหลด...</td></tr></tbody>
+            <thead><tr><th>สมาชิก</th><th>สถานะ</th></tr></thead>
+            <tbody id="userTableBody"><tr><td colspan="2" class="empty-hint">กำลังโหลด...</td></tr></tbody>
           </table>
         </div>
       </section>
