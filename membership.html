@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>แพ็กเกจสมาชิก · DXF → G-Code Generator</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .membership-shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 16px;
+      background: var(--steel-900);
+      overflow-y: auto;
+    }
+
+    .membership-card {
+      width: min(760px, 100%);
+      background: var(--steel-800);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 32px 28px 28px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
+    }
+
+    .membership-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .membership-logo {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 14px;
+      border-radius: 8px;
+      background: #fff;
+      color: #11161d;
+      font: 900 18px/1 var(--sans);
+      letter-spacing: -.08em;
+      box-shadow: 0 0 6px rgba(245, 166, 35, .25);
+    }
+
+    .membership-card h1 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      letter-spacing: .03em;
+    }
+
+    .membership-sub {
+      margin: 0;
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .plan {
+      position: relative;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 20px 16px;
+      text-align: center;
+      background: var(--steel-700);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+    }
+
+    .plan.featured {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 1px rgba(245, 166, 35, .18);
+    }
+
+    .plan-badge {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: var(--amber);
+      color: #1a1206;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .plan-days {
+      color: var(--ink-dim);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .plan-price {
+      margin-top: 9px;
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .plan-unit {
+      margin-top: 3px;
+      color: var(--ink-faint);
+      font-size: 10px;
+    }
+
+    .contact-box {
+      padding: 18px;
+      text-align: center;
+      background: var(--steel-850);
+      border: 1px solid var(--line-soft);
+      border-radius: 9px;
+    }
+
+    .contact-box h2 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .contact-box p {
+      margin: 0 0 14px;
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .contact-actions {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .contact-actions .btn {
+      justify-content: center;
+      min-width: 180px;
+      text-decoration: none;
+    }
+
+    .back-link {
+      display: block;
+      margin-top: 18px;
+      text-align: center;
+      color: var(--cyan);
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .back-link:hover { text-decoration: underline; }
+
+    @media (max-width: 620px) {
+      .membership-shell { align-items: flex-start; }
+      .membership-card { padding: 26px 18px 22px; }
+      .plans { grid-template-columns: 1fr; }
+      .plan { min-height: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="membership-shell">
+    <section class="membership-card" aria-labelledby="membershipTitle">
+      <header class="membership-brand">
+        <span class="membership-logo" aria-hidden="true">AP</span>
+        <h1 id="membershipTitle">แพ็กเกจสมาชิก</h1>
+        <p class="membership-sub">เลือกแพ็กเกจที่เหมาะกับการใช้งาน DXF → G-Code Generator</p>
+      </header>
+
+      <div class="plans" aria-label="รายการแพ็กเกจสมาชิก">
+        <article class="plan">
+          <div class="plan-days">30 วัน</div>
+          <div class="plan-price">950</div>
+          <div class="plan-unit">บาท</div>
+        </article>
+
+        <article class="plan">
+          <div class="plan-days">90 วัน</div>
+          <div class="plan-price">2,500</div>
+          <div class="plan-unit">บาท</div>
+        </article>
+
+        <article class="plan featured">
+          <span class="plan-badge">คุ้มที่สุด</span>
+          <div class="plan-days">365 วัน</div>
+          <div class="plan-price">9,500</div>
+          <div class="plan-unit">บาท</div>
+        </article>
+      </div>
+
+      <div class="contact-box">
+        <h2>ติดต่อแอดมินเพื่อสมัครหรือต่ออายุ</h2>
+        <p>แจ้งอีเมลที่ใช้สมัครและแพ็กเกจที่ต้องการผ่านเพจ AP CNC DIY</p>
+        <div class="contact-actions">
+          <a
+            class="btn btn-accent"
+            href="https://www.facebook.com/APCNCDIY/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >ติดต่อแอดมินทาง Facebook</a>
+        </div>
+      </div>
+
+      <a class="back-link" href="login.html">← กลับไปหน้าเข้าสู่ระบบ</a>
+    </section>
+  </main>
+</body>
+</html>
