@@ -70,6 +70,102 @@
       margin: 22px 0;
     }
 
+    .plans-layout {
+      display: grid;
+      grid-template-columns: minmax(190px, .85fr) minmax(0, 1.35fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .plans-layout:not(.has-selection) { display: block; }
+    .plans-layout:not(.has-selection) .plans { margin-bottom: 22px; }
+
+    .plan-details {
+      display: none;
+      padding: 19px;
+      background: var(--steel-850);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      animation: detail-in .18s ease-out;
+    }
+
+    .plans-layout.has-selection .plan-details { display: block; }
+
+    .plan-details h2 {
+      margin: 0 0 5px;
+      color: var(--amber);
+      font-size: 16px;
+    }
+
+    .plan-details .detail-lead {
+      margin: 0 0 14px;
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .detail-price {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .detail-price strong {
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: 28px;
+    }
+
+    .detail-price span { color: var(--ink-dim); font-size: 12px; }
+
+    .payment-box {
+      padding: 13px;
+      background: var(--steel-900);
+      border: 1px solid var(--line-soft);
+      border-radius: 7px;
+    }
+
+    .payment-box h3 { margin: 0 0 9px; font-size: 13px; }
+
+    .payment-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line-soft);
+      font-size: 12px;
+    }
+
+    .payment-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .payment-row span:first-child { color: var(--ink-dim); }
+    .payment-row strong { text-align: right; color: var(--ink); }
+
+    .detail-note {
+      margin: 12px 0 0;
+      color: var(--ink-dim);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .detail-reset {
+      margin-top: 14px;
+      border: 0;
+      padding: 0;
+      color: var(--cyan);
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+    }
+
+    .detail-reset:hover { text-decoration: underline; }
+
+    @keyframes detail-in {
+      from { opacity: 0; transform: translateX(8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
     .plan {
       position: relative;
       min-height: 150px;
@@ -81,7 +177,17 @@
       background: var(--steel-700);
       border: 1px solid var(--line);
       border-radius: 9px;
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, transform .15s;
     }
+
+    .plan:hover { border-color: var(--amber); transform: translateY(-2px); }
+    .plan.selected { border-color: var(--amber); background: var(--steel-750); box-shadow: 0 0 0 1px rgba(245, 166, 35, .18); }
+    .plans-layout.has-selection .plans { display: flex; flex-direction: column; margin: 0; }
+    .plans-layout.has-selection .plan { display: none; }
+    .plans-layout.has-selection .plan.selected { display: flex; min-height: 218px; }
 
     .plan.featured {
       border-color: var(--amber);
@@ -194,6 +300,8 @@
       .membership-card { padding: 26px 18px 22px; }
       .plans { grid-template-columns: 1fr; }
       .plan { min-height: 120px; }
+      .plans-layout { grid-template-columns: 1fr; }
+      .plans-layout.has-selection .plan.selected { min-height: 150px; }
     }
   </style>
 </head>
@@ -251,5 +359,73 @@
       <a class="back-link" href="login.html">← กลับไปหน้าเข้าสู่ระบบ</a>
     </section>
   </main>
+<script>
+(() => {
+  const plans = document.querySelector('.plans');
+  if (!plans) return;
+  const layout = document.createElement('div');
+  layout.className = 'plans-layout';
+  plans.parentNode.insertBefore(layout, plans);
+  layout.appendChild(plans);
+
+  const details = document.createElement('section');
+  details.className = 'plan-details';
+  details.setAttribute('aria-live', 'polite');
+  layout.appendChild(details);
+  const originalOrder = Array.from(plans.querySelectorAll('.plan'));
+
+  const showDetails = (plan) => {
+    const days = plan.querySelector('.plan-days')?.textContent.trim() || '';
+    const price = plan.querySelector('.plan-price')?.textContent.trim() || '';
+    const original = plan.querySelector('.plan-original-price')?.textContent.trim() || '';
+    details.innerHTML = `<h2>แพ็กเกจ ${days}</h2>
+      <p class="detail-lead">รายละเอียดราคาสำหรับการใช้งาน AP Cabinet Pro</p>
+      <div class="detail-price"><strong>${price}</strong><span>บาท / ${days}</span></div>
+      ${original ? `<p class="detail-note">ราคาปกติ ${original}</p>` : ''}
+      <div class="payment-box">
+        <h3>ช่องทางการโอนเงิน</h3>
+        <div class="payment-row"><span>ธนาคาร</span><strong>ออมสิน</strong></div>
+        <div class="payment-row"><span>เลขที่บัญชี</span><strong>020376680458</strong></div>
+        <div class="payment-row"><span>ชื่อบัญชี</span><strong>ร้าน AP CNC DIY</strong></div>
+      </div>
+      <p class="detail-note">หลังโอนเงิน กรุณาแจ้งอีเมลและแนบหลักฐานการโอนให้แอดมินทาง Facebook เพื่อเปิดสิทธิ์การใช้งาน</p>
+      <button type="button" class="detail-reset">← เลือกแพ็กเกจอื่น</button>`;
+    details.querySelector('.detail-reset').addEventListener('click', clearSelection);
+  };
+
+  const selectPlan = (plan) => {
+    layout.classList.add('has-selection');
+    originalOrder.forEach(item => {
+      item.classList.toggle('selected', item === plan);
+      item.setAttribute('aria-pressed', item === plan ? 'true' : 'false');
+    });
+    plans.prepend(plan);
+    showDetails(plan);
+  };
+
+  function clearSelection() {
+    layout.classList.remove('has-selection');
+    originalOrder.forEach(item => {
+      item.classList.remove('selected');
+      item.setAttribute('aria-pressed', 'false');
+      plans.appendChild(item);
+    });
+    details.innerHTML = '';
+  }
+
+  originalOrder.forEach(plan => {
+    plan.setAttribute('role', 'button');
+    plan.setAttribute('tabindex', '0');
+    plan.setAttribute('aria-pressed', 'false');
+    plan.addEventListener('click', () => selectPlan(plan));
+    plan.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectPlan(plan);
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
