@@ -1004,18 +1004,31 @@
         const e = T();
         e && l("chkToolpath").checked && le(e), P()
     }), async function() {
-        const e = await s.requireLogin();
-        if (!e) return;
-        if (!isSketchUpHtmlDialog()) {
-            const gate = l("accessGate"), appRoot = l("appRoot"), accessMsg = l("accessMsg"), gateLogout = l("btnGateLogout");
-            return appRoot && (appRoot.style.display = "none"), gate && (gate.style.display = ""), accessMsg && (accessMsg.textContent = "เว็บ G-code Generator ปิดให้บริการชั่วคราว กรุณาใช้ G-code Generator ในปลั๊กอิน AP Cabinet Pro"), gateLogout && (gateLogout.style.display = "", gateLogout.addEventListener("click", () => s.logout())), void 0
+        let e;
+        try {
+            e = await s.requireLogin();
+        } catch (error) {
+            const msg = l("accessMsg"), logout = l("btnGateLogout");
+            if (msg) msg.textContent = "ตรวจสอบสิทธิ์ไม่สำเร็จ กรุณาลองโหลดหน้าใหม่อีกครั้ง";
+            if (logout) {
+                logout.style.display = "";
+                logout.addEventListener("click", () => s.logout());
+            }
+            return;
         }
+        if (!e) return;
         let o;
         u = e.id;
         try {
             if (o = await s.getMyProfile(), !o) throw new Error("no-profile")
         } catch (e) {
-            return void(l("accessMsg").textContent = "ตรวจสอบสิทธิ์ไม่สำเร็จ (เครือข่ายมีปัญหา) — ลองโหลดหน้าใหม่อีกครั้ง")
+            const msg = l("accessMsg"), logout = l("btnGateLogout");
+            if (msg) msg.textContent = "ตรวจสอบสิทธิ์ไม่สำเร็จ (เครือข่ายมีปัญหา) — ลองเข้าสู่ระบบใหม่อีกครั้ง";
+            if (logout) {
+                logout.style.display = "";
+                logout.addEventListener("click", () => s.logout());
+            }
+            return;
         }
         if (!("admin" === o.role || "active" === o.status && (!o.expires_at || new Date(o.expires_at).getTime() >= Date.now()))) {
             const e = {
