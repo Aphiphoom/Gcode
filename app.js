@@ -129,6 +129,7 @@
             T = {
                 id: u,
                 fileName: o.name,
+                sourceDxf: n,
                 dxf: s,
                 layerColor: h,
                 layerVisible: b,
@@ -946,7 +947,16 @@
             e.textContent = o, e.disabled = !1, t && (t.disabled = !1)
         }
         var a
-    }), l("btnExportZip").addEventListener("click", async () => {
+    }), (() => {
+        const exportZipButton = l("btnExportZip");
+        if (!exportZipButton) return;
+        exportZipButton.textContent = "Export Gcode";
+        const exportDxfButton = document.createElement("button");
+        exportDxfButton.id = "btnExportDxf";
+        exportDxfButton.className = "btn btn-ghost";
+        exportDxfButton.textContent = "Export DXF";
+        exportZipButton.insertAdjacentElement("afterend", exportDxfButton);
+    })(), l("btnExportZip").addEventListener("click", async () => {
         const e = r.filter(e => e.gcode);
         if (!e.length) return void he(['ยังไม่มี G-code ให้ Export — กด "สร้าง G-code ทุกไฟล์" ก่อน']);
         const t = "Gcode_output",
@@ -966,6 +976,20 @@
             await a.downloadZip(n + ".zip", s)
         } catch (e) {
             he(["สร้างไฟล์ zip ไม่สำเร็จ: " + e.message])
+        }
+    }), l("btnExportDxf").addEventListener("click", async () => {
+        const e = r.filter(e => typeof e.sourceDxf === "string" && e.sourceDxf.length);
+        if (!e.length) return void he(["ยังไม่มี DXF ให้ Export — กรุณาเปิดไฟล์ DXF ก่อน"]);
+        const t = "DXF_output",
+            o = window.prompt("ชื่อไฟล์ ZIP สำหรับ DXF (ไม่ต้องใส่นามสกุล)", t);
+        if (null === o) return;
+        const n = (o.trim() || t).replace(/[/\\:*?"<>|]/g, "_"),
+            s = e.map(e => ({ name: e.fileName, content: e.sourceDxf }));
+        try {
+            await a.downloadZip(n + ".zip", s);
+            he([`Export DXF สำเร็จ ${e.length} ไฟล์`], !0);
+        } catch (e) {
+            he(["สร้างไฟล์ ZIP DXF ไม่สำเร็จ: " + e.message]);
         }
     }), l("btnSave").addEventListener("click", y), document.querySelectorAll(".tab").forEach(e => e.addEventListener("click", () => ue(e.dataset.tab))), l("btnZoomIn").addEventListener("click", () => me(1.2)), l("btnZoomOut").addEventListener("click", () => me(1 / 1.2)), l("btnFit").addEventListener("click", () => {
         pe() || N()
