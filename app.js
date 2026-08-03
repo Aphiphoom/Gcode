@@ -1006,6 +1006,10 @@
     }), async function() {
         const e = await s.requireLogin();
         if (!e) return;
+        if (!isSketchUpHtmlDialog()) {
+            const gate = l("accessGate"), appRoot = l("appRoot"), accessMsg = l("accessMsg"), gateLogout = l("btnGateLogout");
+            return appRoot && (appRoot.style.display = "none"), gate && (gate.style.display = ""), accessMsg && (accessMsg.textContent = "เว็บ G-code Generator ปิดให้บริการชั่วคราว กรุณาใช้ G-code Generator ในปลั๊กอิน AP Cabinet Pro"), gateLogout && (gateLogout.style.display = "", gateLogout.addEventListener("click", () => s.logout())), void 0
+        }
         let o;
         u = e.id;
         try {
