@@ -220,35 +220,18 @@
       font-weight: 800;
     }
 
-    .plan-original-price {
-      margin-top: 8px;
-      color: var(--ink-faint);
-      font-family: var(--mono);
-      font-size: 13px;
-      text-decoration: line-through;
-      text-decoration-thickness: 1px;
-    }
-
-    .plan-discount {
-      display: inline-block;
-      margin-left: 5px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(78, 208, 122, .14);
-      color: var(--green);
-      font-family: var(--sans);
-      font-size: 10px;
-      font-weight: 700;
-      text-decoration: none;
-      vertical-align: 1px;
-    }
-
-    .plan-original-price + .plan-price { margin-top: 4px; }
-
     .plan-unit {
       margin-top: 3px;
       color: var(--ink-faint);
       font-size: 10px;
+    }
+
+    .plan-benefit {
+      margin-top: 10px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.45;
     }
 
     .contact-box {
@@ -325,21 +308,16 @@
 
         <article class="plan">
           <div class="plan-days">90 วัน</div>
-          <div class="plan-original-price">
-            2,500 บาท <span class="plan-discount">ลด 10%</span>
-          </div>
-          <div class="plan-price">2,250</div>
+          <div class="plan-price">2,500</div>
           <div class="plan-unit">บาท</div>
         </article>
 
         <article class="plan featured">
           <span class="plan-badge">คุ้มที่สุด</span>
           <div class="plan-days">365 วัน</div>
-          <div class="plan-original-price">
-            9,500 บาท <span class="plan-discount">ลด 20%</span>
-          </div>
-          <div class="plan-price">7,600</div>
+          <div class="plan-price">9,500</div>
           <div class="plan-unit">บาท</div>
+          <div class="plan-benefit">สอนใช้งานและตั้งค่าออนไลน์ฟรี 1 วัน</div>
         </article>
       </div>
 
@@ -377,11 +355,11 @@
   const showDetails = (plan) => {
     const days = plan.querySelector('.plan-days')?.textContent.trim() || '';
     const price = plan.querySelector('.plan-price')?.textContent.trim() || '';
-    const original = plan.querySelector('.plan-original-price')?.textContent.trim() || '';
+    const benefit = plan.querySelector('.plan-benefit')?.textContent.trim() || '';
     details.innerHTML = `<h2>แพ็กเกจ ${days}</h2>
       <p class="detail-lead">รายละเอียดราคาสำหรับการใช้งาน AP Cabinet Pro</p>
       <div class="detail-price"><strong>${price}</strong><span>บาท / ${days}</span></div>
-      ${original ? `<p class="detail-note">ราคาปกติ ${original}</p>` : ''}
+      ${benefit ? `<p class="detail-benefit">✓ ${benefit}</p>` : ''}
       <div class="payment-box">
         <h3>ช่องทางการโอนเงิน</h3>
         <div class="payment-row"><span>ธนาคาร</span><strong>ออมสิน</strong></div>
