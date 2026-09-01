@@ -11,6 +11,8 @@
     body.page-admin .admin-main{max-width:1440px;display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);align-items:start;gap:18px}
     body.page-admin .member-list-panel{position:sticky;top:18px;max-height:calc(100vh - 94px);display:flex;flex-direction:column;min-width:0}
     body.page-admin .member-list-panel .table-scroll{overflow:auto;min-height:180px}
+    body.page-admin .member-search{width:100%;margin:10px 0 4px;padding:10px 12px;border:1px solid var(--steel-600);border-radius:8px;background:var(--steel-850);color:var(--ink);outline:none}
+    body.page-admin .member-search:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(245,166,35,.12)}
     body.page-admin #userTable{min-width:0;margin-top:8px}
     body.page-admin #userTable th,body.page-admin #userTable td{padding:10px 8px}
     body.page-admin #userTable th:last-child,body.page-admin #userTable td:last-child{text-align:right;width:108px}
@@ -51,6 +53,7 @@
     <main class="admin-main">
       <section class="admin-panel member-list-panel">
         <p class="eyebrow">รายชื่อสมาชิกทั้งหมด</p>
+        <input id="memberSearch" class="member-search" type="search" placeholder="ค้นหาอีเมลสมาชิก..." autocomplete="off">
         <div class="table-scroll">
           <table class="admin-table" id="userTable">
             <thead><tr><th>สมาชิก</th><th>สถานะ</th></tr></thead>
@@ -59,8 +62,8 @@
         </div>
       </section>
 
-      <section class="admin-panel admin-detail" id="detailPanel" style="display:none">
-        <p class="eyebrow">รายละเอียด · <span id="detailEmail"></span></p>
+      <section class="admin-panel admin-detail" id="detailPanel">
+        <p class="eyebrow">รายละเอียด · <span id="detailEmail">กำลังโหลด...</span></p>
         <div class="form-grid">
           <label class="fld"><span>สถานะ</span><select id="detailStatus"><option value="pending">รออนุมัติ (pending)</option><option value="active">ใช้งานได้ (active)</option><option value="suspended">ระงับสิทธิ์ (suspended)</option></select></label>
           <label class="fld"><span>ใช้ได้ถึงวันที่</span><input type="date" id="detailExpires"></label>
