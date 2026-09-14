@@ -1,9 +1,10 @@
 {
   "product": "AP Cabinet Pro",
-  "latest_version": "1.2.1",
-  "file_name": "AP_Cabinet_Pro_V1.2.1.rbz",
-  "download_url": "https://github.com/Aphiphoom/Gcode/releases/download/V1.2/AP_Cabinet_Pro_V1.2.1.rbz",
-  "release_url": "https://github.com/Aphiphoom/Gcode/releases/tag/V1.2",
-  "notes": "รุ่นปล่อยจริง 1.2.1 สำหรับผู้ใช้ทั่วไป",
-  "published_at": "2026-08-01"
+  "latest_version": "2.1.080",
+  "file_name": "AP_Cabinet_Pro_V2.1.080.rbz",
+  "download_url": "https://github.com/Aphiphoom/Gcode/releases/download/AP_Cabinet_Pro/AP_Cabinet_Pro_V2.1.080.rbz",
+  "release_url": "https://github.com/Aphiphoom/Gcode/releases/tag/AP_Cabinet_Pro",
+  "line_group_url": "https://line.me/ti/g/4v9_7RW5kG",
+  "notes": "AP Cabinet Pro V2.1.080",
+  "published_at": "2026-09-14"
 }
