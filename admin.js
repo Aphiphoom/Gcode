@@ -92,7 +92,11 @@
     $("detailStatus").value = member.status;
     $("detailExpires").value = member.expiresAt ? member.expiresAt.slice(0, 10) : "";
     $("detailRole").value = member.role;
+    $("detailSellerLevel").value = String(member.sellerLevel);
+    $("detailCredits").value = member.credits.toLocaleString("th-TH");
+    updateSellerHint();
     $("saveUserMsg").textContent = "";
+    $("creditMsg").textContent = "";
     renderMembers();
     loadLoginLogs(member.id);
   }
@@ -111,6 +115,8 @@
       role: profile.role,
       status: profile.status,
       expiresAt: profile.expires_at,
+      sellerLevel: Number(profile.seller_level || 0),
+      credits: Number(profile.credit_balance || 0),
       createdAt: profile.created_at
     }));
     renderMembers();
@@ -131,6 +137,7 @@
     const { error } = await sb.from("profiles").update({
       status: $("detailStatus").value,
       role: $("detailRole").value,
+      seller_level: Number($("detailSellerLevel").value),
       expires_at: expiresAt
     }).eq("id", selectedId);
     if (error) {
@@ -139,6 +146,26 @@
     }
     $("saveUserMsg").textContent = "✓ บันทึกแล้ว (มีผลตอนสมาชิก login ครั้งถัดไป)";
     await loadMembers();
+  }
+
+  async function adjustCredit(direction) {
+    if (!selectedId) return;
+    const amount = Math.trunc(Number($("creditAmount").value));
+    const reason = $("creditReason").value.trim();
+    if (!Number.isFinite(amount) || amount <= 0) return void($("creditMsg").textContent = "⚠ กรุณาระบุจำนวนเครดิตมากกว่า 0");
+    if (!reason) return void($("creditMsg").textContent = "⚠ กรุณาระบุหมายเหตุ");
+    $("creditMsg").textContent = "กำลังปรับเครดิต...";
+    const { data, error } = await sb.rpc("admin_adjust_credit", { p_user_id: selectedId, p_delta: direction * amount, p_reason: reason });
+    if (error) return void($("creditMsg").textContent = "⚠ ปรับเครดิตไม่สำเร็จ: " + error.message);
+    $("creditMsg").textContent = "✓ เครดิตคงเหลือ " + Number(data || 0).toLocaleString("th-TH");
+    $("creditReason").value = "";
+    await loadMembers();
+  }
+
+  function updateSellerHint() {
+    const role = $("detailRole").value;
+    const level = Number($("detailSellerLevel").value);
+    $("sellerLimitHint").textContent = role === "admin" ? "Admin ลงสินค้าได้ไม่จำกัด" : (["ลงขายไม่ได้", "ลงขายได้สูงสุด 5 ชิ้น", "ลงขายได้สูงสุด 25 ชิ้น", "ลงขายได้สูงสุด 50 ชิ้น"][level] || "ลงขายไม่ได้");
   }
 
   (async function init() {
@@ -157,6 +184,10 @@
     $("btnLogout").addEventListener("click", () => window.AuthClient.logout());
     $("btnRefresh").addEventListener("click", loadMembers);
     $("btnSaveUser").addEventListener("click", saveMember);
+    $("btnCreditAdd").addEventListener("click", () => adjustCredit(1));
+    $("btnCreditSubtract").addEventListener("click", () => adjustCredit(-1));
+    $("detailSellerLevel").addEventListener("change", updateSellerHint);
+    $("detailRole").addEventListener("change", updateSellerHint);
     $("memberSearch").addEventListener("input", (event) => {
       searchText = event.target.value;
       renderMembers();
