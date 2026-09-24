@@ -19,11 +19,11 @@
     return members.filter((member) => (member.email || "").toLocaleLowerCase().includes(query));
   }
 
-  function renderMembers() {
+  function remainingDays(expiresAt) {\n    if (!expiresAt) return "ไม่จำกัด";\n    const expiry = new Date(expiresAt).getTime();\n    if (!Number.isFinite(expiry)) return "—";\n    const diff = expiry - Date.now();\n    if (diff < 0) return "หมดอายุ";\n    return `${Math.max(0, Math.ceil(diff / 86400000))} วัน`;\n  }\n\n  function renderMembers() {
     const body = $("userTableBody");
     const rows = visibleMembers();
     if (!rows.length) {
-      body.innerHTML = `<tr><td colspan="2" class="empty-hint">${members.length ? "ไม่พบสมาชิกที่ค้นหา" : "ยังไม่มีสมาชิก"}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="3" class="empty-hint">${members.length ? "ไม่พบสมาชิกที่ค้นหา" : "ยังไม่มีสมาชิก"}</td></tr>`;
       return;
     }
 
@@ -43,7 +43,7 @@
       pill.className = `status-pill status-${shownStatus}`;
       pill.textContent = expired ? "หมดอายุ" : statusLabel(member.status);
       statusCell.appendChild(pill);
-      row.append(emailCell, statusCell);
+      const daysCell = document.createElement("td");\n      daysCell.textContent = remainingDays(member.expiresAt);\n      row.append(emailCell, daysCell, statusCell);
       row.addEventListener("click", () => selectMember(member));
       body.appendChild(row);
     });
@@ -102,10 +102,10 @@
   }
 
   async function loadMembers() {
-    $("userTableBody").innerHTML = '<tr><td colspan="2" class="empty-hint">กำลังโหลด...</td></tr>';
+    $("userTableBody").innerHTML = '<tr><td colspan="3" class="empty-hint">กำลังโหลด...</td></tr>';
     const { data, error } = await sb.from("profiles").select("*").order("created_at", { ascending: false });
     if (error) {
-      $("userTableBody").innerHTML = `<tr><td colspan="2" class="empty-hint">โหลดไม่สำเร็จ: ${error.message}</td></tr>`;
+      $("userTableBody").innerHTML = `<tr><td colspan="3" class="empty-hint">โหลดไม่สำเร็จ: ${error.message}</td></tr>`;
       return;
     }
 
