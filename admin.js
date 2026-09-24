@@ -19,7 +19,16 @@
     return members.filter((member) => (member.email || "").toLocaleLowerCase().includes(query));
   }
 
-  function remainingDays(expiresAt) {\n    if (!expiresAt) return "ไม่จำกัด";\n    const expiry = new Date(expiresAt).getTime();\n    if (!Number.isFinite(expiry)) return "—";\n    const diff = expiry - Date.now();\n    if (diff < 0) return "หมดอายุ";\n    return `${Math.max(0, Math.ceil(diff / 86400000))} วัน`;\n  }\n\n  function renderMembers() {
+  function remainingDays(expiresAt) {
+    if (!expiresAt) return "ไม่จำกัด";
+    const expiry = new Date(expiresAt).getTime();
+    if (!Number.isFinite(expiry)) return "—";
+    const diff = expiry - Date.now();
+    if (diff < 0) return "หมดอายุ";
+    return `${Math.max(0, Math.ceil(diff / 86400000))} วัน`;
+  }
+
+  function renderMembers() {
     const body = $("userTableBody");
     const rows = visibleMembers();
     if (!rows.length) {
@@ -43,7 +52,9 @@
       pill.className = `status-pill status-${shownStatus}`;
       pill.textContent = expired ? "หมดอายุ" : statusLabel(member.status);
       statusCell.appendChild(pill);
-      const daysCell = document.createElement("td");\n      daysCell.textContent = remainingDays(member.expiresAt);\n      row.append(emailCell, daysCell, statusCell);
+      const daysCell = document.createElement("td");
+      daysCell.textContent = remainingDays(member.expiresAt);
+      row.append(emailCell, daysCell, statusCell);
       row.addEventListener("click", () => selectMember(member));
       body.appendChild(row);
     });
